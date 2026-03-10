@@ -1,0 +1,35 @@
+// app.json
+{
+  "expo": {
+    "name": "North Studio",
+    "slug": "north-studio",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "northstudio",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0D14",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0D14"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.northms.studio"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0A0D14"
+      },
+      "package": "com.northms.studio",
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "plugins": ["expo-router", "expo-font"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
