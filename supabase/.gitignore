@@ -1,0 +1,83 @@
+# =========================================
+# Dependencies
+# =========================================
+node_modules/
+
+# =========================================
+# Environment Variables & Secrets (CRITICAL)
+# =========================================
+.env
+*.env
+.env.local
+.env.*.local
+.env.keys
+supabase/.env
+
+# Mobile Keystores & Certificates
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+*.keystore
+*.pem
+
+# =========================================
+# Custom / Project Specific
+# =========================================
+GEMINI.md
+
+# =========================================
+# Expo & React Native
+# =========================================
+.expo/
+expo-env.d.ts
+dist/
+web-build/
+# Ignore native directories (if you ever prebuild)
+ios/
+android/
+
+# =========================================
+# Supabase Local State
+# =========================================
+supabase/.branches/
+supabase/.temp/
+.branches/
+.temp/
+
+# =========================================
+# Logs & Coverage
+# =========================================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+coverage/
+
+# =========================================
+# OS & Editor Directories
+# =========================================
+.DS_Store
+.AppleDouble
+.LSOverride
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local

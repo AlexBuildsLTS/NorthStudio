@@ -184,12 +184,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   badge: {
-    backgroundColor: 'rgba(176, 38, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 13, 0.01)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: 'rgba(176, 38, 255, 0.3)',
+
   },
   badgeText: {
     color: NORTH_THEME.colors.accent.purple,
@@ -200,12 +200,10 @@ const styles = StyleSheet.create({
   creditPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 240, 255, 0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 100,
     borderWidth: 1,
-    borderColor: 'rgba(0, 240, 255, 0.3)',
     gap: 6,
   },
   creditText: {
@@ -258,13 +256,13 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 56,
     height: 56,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(0, 0, 255, 0.03)',
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: NORTH_THEME.colors.border.glass,
+    borderColor: 'rgba(0, 0, 255, 0.05)',
   },
   cardTitle: {
     color: NORTH_THEME.colors.text.primary,

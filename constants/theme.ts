@@ -4,7 +4,7 @@ export const NORTH_THEME = {
     background: {
       primary: '#0A0D14',   // Deep Dark Mode primary
       secondary: '#0D1117', // Secondary panels
-      card: 'rgba(13, 17, 23, 0.65)', // Glassmorphism base
+      card: 'rgba(13, 13, 25, 0.65)', // Glassmorphism base
     },
     accent: {
       purple: '#B026FF', // Electric Purple
@@ -17,8 +17,8 @@ export const NORTH_THEME = {
       muted: '#64748B',     // Slate-500 equivalent
     },
     border: {
-      glass: 'rgba(255, 255, 255, 0.08)',
-      active: 'rgba(176, 38, 255, 0.5)', // Purple glow
+      glass: 'rgba(0, 0, 255, 0.08)',
+      active: 'rgba(0, 0, 255, 0.05)', // Purple glow
     }
   },
   animation: {

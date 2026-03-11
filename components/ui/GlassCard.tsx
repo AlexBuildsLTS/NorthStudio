@@ -1,44 +1,104 @@
-/**
- * @file components/ui/GlassCard.tsx
- * @description Core structural primitive for the North Studio aesthetic.
- * Utilizes Expo's native RenderEffect API for 120fps hardware-accelerated 
- * blur operations without compromising Android APK stability.
- */
-
 import React from 'react';
-import { ViewStyle, StyleProp } from 'react-native';
-import { BlurView } from 'expo-blur';
+import {
+  View,
+  ViewStyle,
+  StyleProp,
+  StyleSheet,
+  Platform,
+  Pressable,
+} from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 export interface GlassCardProps {
-  /** React children to render inside the glass container */
   children: React.ReactNode;
-  /** NativeWind (Tailwind) classes for structural styling */
-  className?: string;
-  /** Tiered blur intensity mapped to device capabilities */
-  intensity?: "light" | "regular" | "heavy";
-  /** Fallback for Reanimated or specific inline styles */
   style?: StyleProp<ViewStyle>;
+  intensity?: 'light' | 'medium' | 'heavy';
+  interactive?: boolean;
 }
 
-export const GlassCard = React.memo(({ 
-  children, 
-  className = "", 
-  intensity = "regular", 
-  style 
+export const GlassCard = ({
+  children,
+  style,
+  intensity = 'medium',
+  interactive = true,
 }: GlassCardProps) => {
-  // Translate semantic tiers to integer weights optimized for mobile GPUs
-  const blurValue = intensity === "heavy" ? 40 : intensity === "light" ? 15 : 25;
+  const scale = useSharedValue(1);
+  const glowOpacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    shadowOpacity: glowOpacity.value,
+    shadowColor: intensity === 'heavy' ? '#10011a' : '#190626',
+    shadowRadius: intensity === 'heavy' ? 20 : 10,
+    elevation: intensity === 'heavy' ? 10 : 5,
+  }));
+
+  const handleHoverIn = () => {
+    if (!interactive) return;
+    scale.value = withSpring(1.02, { damping: 15, stiffness: 300 });
+    glowOpacity.value = withTiming(intensity === 'heavy' ? 0.4 : 0.3, {
+      duration: 200,
+    });
+  };
+
+  const handleHoverOut = () => {
+    if (!interactive) return;
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+    glowOpacity.value = withTiming(1, { duration: 200 });
+  };
+
+  // Safe overlay colors that won't overwrite your gradient
+  const overlayColor =
+    intensity === 'light'
+      ? 'rgba(255, 255, 255, 0.1)'
+      : intensity === 'medium'
+        ? 'rgba(15, 23, 42, 0.85)' // Tailwind Slate 900 w/ 85% opacity
+        : 'rgba(0, 0, 0, 0.15)'; // Tailwind Slate 900 w/ 95% opacity
+
+  const glassBorderColor =
+    intensity === 'light' ? 'rgba(0, 0, 255, 0.15)' : intensity === 'medium';
 
   return (
-    <BlurView 
-      intensity={blurValue} 
-      tint="dark" 
-      className={`overflow-hidden ${className}`} 
-      style={style}
+    <Animated.View
+      style={[style, animatedStyle, { backgroundColor: 'transparent' }]}
     >
-      {children}
-    </BlurView>
-  );
-});
+      {/* THE GLASS LAYER:
+        Absolutely positioned so it doesn't mess with padding.
+        Strictly rounded corners and hidden overflow to kill the square.
+      */}
+      <View
+        style={[
+          StyleSheet.absoluteFill,
+          {
+            overflow: 'hidden',
+            borderRadius: 24,
+            borderWidth: 1,
+            backgroundColor: overlayColor,
+          },
+          Platform.OS === 'web'
+            ? ({ backdropFilter: 'blur(20px)' } as any)
+            : {},
+        ]}
+      />
 
-GlassCard.displayName = 'GlassCard';
+      {/* THE CONTENT LAYER:
+        Handles the interactions and renders the children safely inside the glass.
+      */}
+      <Pressable
+        onHoverIn={handleHoverIn}
+        onHoverOut={handleHoverOut}
+        onPressIn={handleHoverIn}
+        onPressOut={handleHoverOut}
+        disabled={!interactive}
+        style={{ flex: 1, borderRadius: 24 }}
+      >
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+};

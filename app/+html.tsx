@@ -12,15 +12,18 @@ export default function Root({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, shrink-to-fit=no"
+        />
+
         <ScrollViewStyleReset />
-        
+
         {/* THE PRE-RENDER SEMVER SHIELD */}
-        <script 
-          dangerouslySetInnerHTML={{ 
-            __html: `window.process = { env: { REACT_NATIVE_VERSION: '0.76.0' } };` 
-          }} 
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.process = { env: { REACT_NATIVE_VERSION: '0.76.0' } };`,
+          }}
         />
       </head>
       <body>{children}</body>

@@ -1,50 +1,53 @@
 /**
  * @file app/(app)/_layout.tsx
  * @description The Authenticated Workspace Controller.
- * Manages the persistent Sidebar/Header UI and enforces Auth route protection.
+ * Restores your original Master Layout structure, integrating the TopBar, Sidebar, and Tabs.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   ActivityIndicator,
-  TouchableOpacity,
-  Text,
   StyleSheet,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
-import { Redirect, Slot, useRouter } from 'expo-router';
-import { supabase } from '@/lib/supabase/client';
+import { Redirect, Tabs, useRouter } from 'expo-router';
 import { NORTH_THEME } from '@/constants/theme';
 
+// Stores
+import { useAuthStore } from '@/store/useAuthStore';
+import { useUserStore } from '@/store/useUserStore';
+
+// UI Components
+import { TopBar } from '@/components/navigation/TopBar';
+import { Sidebar } from '@/components/navigation/Sidebar';
+import { BottomTabBar } from '@/components/navigation/BottomTabBar';
+
 export default function AppLayout() {
-  const [session, setSession] = useState<any>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
   const router = useRouter();
 
+  // Pull from the Zustand stores we created
+  const { session, isInitialized, initialize } = useAuthStore();
+  const { profile, fetchProfile } = useUserStore();
+
   useEffect(() => {
-    // 1. Check for an existing session in local storage
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setIsInitializing(false);
-    });
+    if (!isInitialized) {
+      initialize();
+    }
+  }, [isInitialized, initialize]);
 
-    // 2. Listen for real-time login/logout events
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-      },
-    );
-
-    return () => authListener.subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.replace('/(auth)/login');
-  };
+  // Fetch the user profile (for the TopBar badges/avatar) once we have a session
+  useEffect(() => {
+    if (session?.user?.id && !profile) {
+      fetchProfile(session.user.id);
+    }
+  }, [session, profile, fetchProfile]);
 
   // Show a dark loading screen while checking local storage
-  if (isInitializing) {
+  if (!isInitialized) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator
@@ -60,25 +63,33 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  // If session exists, render the master UI layout
   return (
     <View style={styles.masterLayout}>
-      {/* This is a placeholder for the top Header.
-        It contains a logout button so you can clear your session during testing. 
-      */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>North Studio Workspace</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
+      {/* 1. Universal Top Header (Restored to your original position) */}
+      <TopBar />
 
       <View style={styles.contentArea}>
-        {/* The Sidebar will go here in the next phase */}
+        {/* 2. Desktop Sidebar (Only renders on Desktop) */}
+        {isDesktop && <Sidebar />}
 
+        {/* 3. Main Canvas / Routing Area */}
         <View style={styles.mainCanvas}>
-          {/* <Slot /> renders dashboard.tsx, studio.tsx, gallery.tsx, etc. */}
-          <Slot />
+          <Tabs
+            // On mobile, use the custom BottomTabBar. On desktop, hide it completely.
+            tabBar={(props) => (isDesktop ? null : <BottomTabBar {...props} />)}
+            screenOptions={{
+              headerShown: false, // TopBar handles the header
+              tabBarHideOnKeyboard: Platform.OS === 'android',
+              sceneStyle: {
+                backgroundColor: NORTH_THEME.colors.background.primary,
+              },
+            }}
+          >
+            <Tabs.Screen name="dashboard" options={{ title: 'Home' }} />
+            <Tabs.Screen name="assets" options={{ title: 'Vault' }} />
+            <Tabs.Screen name="studio" options={{ title: 'Studio' }} />
+            <Tabs.Screen name="gallery" options={{ title: 'Gallery' }} />
+          </Tabs>
         </View>
       </View>
     </View>
@@ -96,39 +107,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: NORTH_THEME.colors.background.primary,
   },
-  header: {
-    height: 70,
-    backgroundColor: '#0D1117',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-  },
-  headerTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  logoutBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  logoutText: {
-    color: '#EF4444',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
   contentArea: {
     flex: 1,
     flexDirection: 'row',
   },
   mainCanvas: {
     flex: 1,
+    backgroundColor: NORTH_THEME.colors.background.primary,
+    // Add bottom padding on mobile so the content doesn't get hidden behind the floating BottomBar
+    paddingBottom: Platform.OS !== 'web' ? 90 : 0,
   },
 });

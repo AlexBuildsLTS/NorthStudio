@@ -62,7 +62,7 @@ export const BentoCard = React.memo(({ item, index, isDesktop }: Props) => {
 
   const handleInteraction = (active: boolean) => {
     scale.value = withSpring(active ? 0.96 : 1);
-    glowOpacity.value = withTiming(active ? 1 : 0, { duration: 150 });
+    glowOpacity.value = withTiming(active ? 1 : 0, { duration: 550 });
     if (!active && !isDesktop) {
       rotateX.value = withSpring(0);
       rotateY.value = withSpring(0);
@@ -83,13 +83,13 @@ export const BentoCard = React.memo(({ item, index, isDesktop }: Props) => {
       rotateX.value = interpolate(
         y,
         [0, layout.height],
-        [12, -12],
+        [3, -3],
         Extrapolation.CLAMP,
       );
       rotateY.value = interpolate(
         x,
         [0, layout.width],
-        [-12, 12],
+        [-3, 3],
         Extrapolation.CLAMP,
       );
     }

@@ -1,6 +1,6 @@
 /**
  * @file app/_layout.tsx
- * @description Absolute Root Layout. 
+ * @description Absolute Root Layout.
  * Initializes Tailwind CSS and the Reanimated Physics engine. No routing logic here.
  */
 
