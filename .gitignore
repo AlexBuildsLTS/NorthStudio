@@ -81,6 +81,9 @@ supabase/db/data/
 supabase/.env
 supabase/.env.*
 
+
+
+
 # Deno Cache (Used for Edge Functions)
 .deno/
 vendor/
