@@ -1,6 +1,5 @@
 /**
  * @file app/(app)/settings/biometric.tsx
- * @description AAA+ Biometric Configuration.
  * FIXES: Replaced Tailwind with StyleSheet, Applied Cosmic Background, Universal button formatting.
  */
 

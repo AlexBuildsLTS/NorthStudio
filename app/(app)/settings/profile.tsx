@@ -1,10 +1,6 @@
 /**
  * @file app/(app)/settings/profile.tsx
- * @description AAA+ Profile Edit Interface.
- * @target Android APK & Web ONLY.
- * @fixes
- * - Replaced deprecated MediaTypeOptions with modern Web/APK safe formats.
- * - Resolved Unmatched Route crash by ensuring default export compilation.
+  * @description User Profile Management Interface
  */
 
 import React, { useState, useEffect } from 'react';

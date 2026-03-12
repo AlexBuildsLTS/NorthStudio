@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/store/useAuthStore';
 import { supabase } from '@/lib/supabase/client';
 import { NORTH_THEME } from '@/constants/theme';
-import { Button } from '@/components/ui/Button'; // CRITICAL: MUST BE NAMED EXPORT
+import { Button } from '@/components/ui/Button';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 
 const PasswordField = ({
