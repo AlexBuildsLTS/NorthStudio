@@ -1,6 +1,7 @@
 /**
  * @file components/ui/Button.tsx
- * @description AAA Reanimated Button Component with Haptics and Gradients.
+ * @description AAA+ High-Performance Button Component.
+ * Features: Native-thread Spring scaling, Premium Glow Effects, Platform-safe Haptics.
  */
 
 import React from 'react';
@@ -11,7 +12,9 @@ import {
   ViewStyle,
   TextStyle,
   Platform,
-  TouchableOpacity,
+  Pressable,
+  View,
+  StyleProp,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -21,6 +24,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { NORTH_THEME } from '@/constants/theme';
 
 interface ButtonProps {
   label: string;
@@ -30,8 +34,8 @@ interface ButtonProps {
   icon?: React.ReactNode;
   loading?: boolean;
   disabled?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>; // Fixed: Proper StyleProp typing
+  textStyle?: StyleProp<TextStyle>;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -46,21 +50,40 @@ export const Button: React.FC<ButtonProps> = ({
   textStyle,
 }) => {
   const scale = useSharedValue(1);
-  const opacity = useSharedValue(disabled ? 0.5 : 1);
+  const glowOpacity = useSharedValue(0); // For premium hover/press glow
 
+  // --- PHYSICS ENGINE ---
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    opacity: opacity.value,
+    shadowOpacity: glowOpacity.value,
   }));
 
   const handlePressIn = () => {
     if (disabled || loading) return;
-    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
+    scale.value = withSpring(0.95, NORTH_THEME.animation.springBouncy);
+    glowOpacity.value = withTiming(variant === 'primary' ? 0.6 : 0, {
+      duration: 150,
+    });
   };
 
   const handlePressOut = () => {
     if (disabled || loading) return;
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+    scale.value = withSpring(1, NORTH_THEME.animation.spring);
+    glowOpacity.value = withTiming(0, { duration: 250 });
+  };
+
+  const handleHoverIn = () => {
+    if (disabled || loading || Platform.OS !== 'web') return;
+    scale.value = withSpring(1.02, NORTH_THEME.animation.spring);
+    glowOpacity.value = withTiming(variant === 'primary' ? 0.4 : 0, {
+      duration: 200,
+    });
+  };
+
+  const handleHoverOut = () => {
+    if (disabled || loading || Platform.OS !== 'web') return;
+    scale.value = withSpring(1, NORTH_THEME.animation.spring);
+    glowOpacity.value = withTiming(0, { duration: 200 });
   };
 
   const handlePress = () => {
@@ -75,65 +98,71 @@ export const Button: React.FC<ButtonProps> = ({
     onPress();
   };
 
-  // Heights based on size
-  const height = size === 'sm' ? 40 : size === 'md' ? 50 : 60;
-  const fontSize = size === 'sm' ? 14 : size === 'md' ? 16 : 18;
-
-  const renderContent = () => (
-    <>
-      {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? '#FFF' : '#00F0FF'}
-          style={styles.iconWrapper}
-        />
-      ) : icon ? (
-        <Animated.View style={styles.iconWrapper}>{icon}</Animated.View>
-      ) : null}
-      <Text
-        style={[styles.text, { fontSize }, getTextColor(variant), textStyle]}
-      >
-        {label}
-      </Text>
-    </>
-  );
+  // --- SIZING LOGIC ---
+  const height = size === 'sm' ? 36 : size === 'md' ? 48 : 56;
+  const fontSize = size === 'sm' ? 13 : size === 'md' ? 15 : 16;
 
   return (
-    <Animated.View style={[styles.container, { height }, animatedStyle, style]}>
-      {variant === 'primary' ? (
-        <Animated.View style={StyleSheet.absoluteFill}>
+    <Animated.View
+      style={[
+        styles.container,
+        { height },
+        animatedStyle,
+        getGlowStyle(variant),
+        style,
+      ]}
+    >
+      <Pressable
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onHoverIn={handleHoverIn}
+        onHoverOut={handleHoverOut}
+        onPress={handlePress}
+        disabled={disabled || loading}
+        style={[
+          styles.pressable,
+          getVariantStyle(variant),
+          disabled && styles.disabled,
+        ]}
+      >
+        {variant === 'primary' && !disabled && (
           <LinearGradient
-            colors={['#B026FF', '#6366f1']}
+            colors={[
+              NORTH_THEME.colors.accent.cyan,
+              NORTH_THEME.colors.accent.purple,
+            ]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-        </Animated.View>
-      ) : null}
+        )}
 
-      <Animated.View
-        style={[styles.pressable, getVariantStyle(variant)]}
-        onTouchStart={handlePressIn}
-        onTouchEnd={handlePressOut}
-        // @ts-ignore - React Native Web specific
-        onMouseDown={handlePressIn}
-        onMouseUp={handlePressOut}
-        onMouseLeave={handlePressOut}
-        onResponderGrant={handlePressIn}
-        onResponderRelease={handlePressOut}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={handlePress}
-          disabled={disabled || loading}
-          style={styles.innerTouchable}
-        >
-          {renderContent()}
-        </TouchableOpacity>
-      </Animated.View>
+        <View style={styles.contentRow}>
+          {loading ? (
+            <ActivityIndicator
+              color={variant === 'primary' ? '#000' : '#FFF'}
+              style={styles.icon}
+            />
+          ) : icon ? (
+            <View style={styles.icon}>{icon}</View>
+          ) : null}
+          <Text
+            style={[
+              styles.text,
+              { fontSize },
+              getTextColor(variant, disabled),
+              textStyle,
+            ]}
+          >
+            {loading ? 'PROCESSING...' : label.toUpperCase()}
+          </Text>
+        </View>
+      </Pressable>
     </Animated.View>
   );
 };
 
+// --- STYLING HELPERS ---
 const getVariantStyle = (variant: string): ViewStyle => {
   switch (variant) {
     case 'secondary':
@@ -148,21 +177,22 @@ const getVariantStyle = (variant: string): ViewStyle => {
       return {
         backgroundColor: 'rgba(239, 68, 68, 0.1)',
         borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.4)',
+        borderColor: 'rgba(239, 68, 68, 0.3)',
       };
     default:
-      return {}; // Primary uses LinearGradient behind it
+      return { backgroundColor: NORTH_THEME.colors.accent.purple }; // Fallback for primary
   }
 };
 
-const getTextColor = (variant: string): TextStyle => {
+const getTextColor = (variant: string, disabled: boolean): TextStyle => {
+  if (disabled) return { color: NORTH_THEME.colors.text.muted };
   switch (variant) {
     case 'primary':
-      return { color: '#FFFFFF', fontWeight: '800' };
+      return { color: '#000000', fontWeight: '900' }; // High contrast on neon gradient
     case 'secondary':
-      return { color: '#E2E8F0', fontWeight: '700' };
+      return { color: '#FFFFFF', fontWeight: '700' };
     case 'ghost':
-      return { color: '#00F0FF', fontWeight: '700' };
+      return { color: NORTH_THEME.colors.accent.cyan, fontWeight: '800' };
     case 'destructive':
       return { color: '#EF4444', fontWeight: '800' };
     default:
@@ -170,16 +200,31 @@ const getTextColor = (variant: string): TextStyle => {
   }
 };
 
+const getGlowStyle = (variant: string): ViewStyle => {
+  if (variant !== 'primary') return {};
+  return {
+    shadowColor: NORTH_THEME.colors.accent.cyan,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 15,
+    elevation: 8,
+  };
+};
+
 const styles = StyleSheet.create({
-  container: { width: '100%', borderRadius: 16, overflow: 'hidden' },
-  pressable: { flex: 1, borderRadius: 16 },
-  innerTouchable: {
+  container: { width: '100%', borderRadius: 12 },
+  pressable: {
     flex: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    justifyContent: 'center',
+  },
+  disabled: { opacity: 0.5 },
+  contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    zIndex: 2,
   },
-  text: { letterSpacing: 0.5 },
-  iconWrapper: { marginRight: 8 },
+  text: { letterSpacing: 1 },
+  icon: { marginRight: 8 },
 });
