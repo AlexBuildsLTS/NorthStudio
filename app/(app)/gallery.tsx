@@ -1,6 +1,5 @@
 /**
  * @file app/(app)/gallery.tsx
- * @description Endgame AAA+ Masonry Gallery for North Studio.
  * Features:
  * - Masonry Grid Calculation (Pinterest-style asymmetric heights)
  * - Cinematic Lightbox Preview Engine with Gestures

@@ -1,7 +1,7 @@
 /**
  * @file app/(app)/dashboard.tsx
- * @description AAA+ High-Fidelity Bento Dashboard.
- * Utilizes true glass transparency to match the login screen aesthetics.
+ * @description High-Fidelity Bento Dashboard.
+
  */
 
 import React from 'react';
