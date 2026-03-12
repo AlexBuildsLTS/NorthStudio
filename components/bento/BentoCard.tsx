@@ -51,7 +51,7 @@ export const BentoCard = React.memo(({ item, index, isDesktop }: Props) => {
     backgroundColor: interpolateColor(
       glowOpacity.value,
       [0, 1],
-      [NORTH_THEME.colors.background.card, 'rgba(176, 38, 255, 0.1)'],
+      [NORTH_THEME.colors.background.elevated, 'rgba(176, 38, 255, 0.1)'],
     ),
     borderColor: interpolateColor(
       glowOpacity.value,
