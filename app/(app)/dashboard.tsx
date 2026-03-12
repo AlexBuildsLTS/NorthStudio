@@ -1,162 +1,233 @@
 /**
  * @file app/(app)/dashboard.tsx
- * @description The main control center for North Studio.
- * Features a stagger-fade-in Bento grid, live credit tracking, and hardware-accelerated interactive elements.
+ * @description AAA+ High-Fidelity Bento Dashboard.
+ * Utilizes true glass transparency to match the login screen aesthetics.
  */
 
 import React from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
-  Pressable,
+  ScrollView,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   FadeInDown,
-  FadeInUp,
-  withSpring,
-  useSharedValue,
+  FadeInRight,
   useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  withSequence,
 } from 'react-native-reanimated';
 import {
-  ArrowRight,
-  Cuboid,
   Wand2,
-  DownloadCloud,
+  Image as ImageIcon,
+  ArrowRight,
   Zap,
+  Activity,
+  History,
+  Layers,
+  ShieldCheck,
+  Cpu,
+  Database,
 } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-import { NORTH_THEME } from '@/constants/theme';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { NORTH_THEME } from '@/constants/theme';
+import { useUserStore } from '@/store/useUserStore';
+
+const PulseDot = () => {
+  const opacity = useSharedValue(0.4);
+  React.useEffect(() => {
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1000 }),
+        withTiming(0.4, { duration: 1000 }),
+      ),
+      -1,
+      true,
+    );
+  }, []);
+  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
+  return <Animated.View style={[styles.pulseDot, style]} />;
+};
 
 export default function DashboardScreen() {
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 768;
   const router = useRouter();
+  const { profile } = useUserStore();
+  const isDesktop = width >= 1024;
 
-  // CTA Button Animation State
-  const buttonScale = useSharedValue(1);
-  const buttonAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: withSpring(buttonScale.value, NORTH_THEME.animation.spring) },
-    ],
-  }));
-
-  const handleCreatePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Cast to 'any' to bypass Expo Router's strict indexing lag during development
-    router.push('/(app)/studio' as any);
+  const handleNavigate = (path: string) => {
+    if (Platform.OS !== 'web')
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push(path as any);
   };
+
+  const stagger = (index: number) => 100 * index;
 
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={[
-        styles.content,
-        isDesktop && styles.contentDesktop,
-      ]}
+      contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      {/* HEADER SECTION */}
-      <Animated.View
-        entering={FadeInDown.duration(800).springify()}
-        style={styles.header}
-      >
-        <View style={styles.headerTopRow}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>NORTH STUDIO V2.0</Text>
-          </View>
-          {/* NEW FEATURE: Active Credit Tracking Pill */}
-          <View style={styles.creditPill}>
-            <Zap size={14} color={NORTH_THEME.colors.accent.cyan} />
-            <Text style={styles.creditText}>1,240 Credits</Text>
-          </View>
-        </View>
+      <View style={styles.headerRow}>
+        <Animated.View entering={FadeInDown.delay(stagger(1))}>
+          <Text style={styles.welcomeLabel}>WELCOME</Text>
+          <Text style={styles.userName}>
+            {profile?.username || 'AdminHost'}
+          </Text>
+        </Animated.View>
 
-        <Text style={styles.heroTitle}>
-          Create Realistic{'\n'}Merchandise Mockups.
-        </Text>
-        <Text style={styles.subtitle}>
-          Upload your logos and products, and let our multi-modal AI composite
-          them perfectly with realistic lighting, physics shadows, and dynamic
-          warping.
-        </Text>
+        <Animated.View
+          entering={FadeInRight.delay(stagger(2))}
+          style={styles.systemStatus}
+        >
+          <PulseDot />
+          <Text style={styles.systemStatusText}>ENGINE V2.4: ONLINE</Text>
+        </Animated.View>
+      </View>
 
-        {/* PRIMARY CTA */}
-        <Animated.View style={[styles.ctaWrapper, buttonAnimatedStyle]}>
-          <Pressable
-            onPressIn={() => (buttonScale.value = 0.95)}
-            onPressOut={() => (buttonScale.value = 1)}
-            onPress={handleCreatePress}
-            style={styles.ctaButton}
+      <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
+        {/* HERO CARD: STUDIO */}
+        <Animated.View
+          entering={FadeInDown.delay(stagger(3))}
+          style={[styles.gridItem, isDesktop && styles.heroItem]}
+        >
+          <GlassCard
+            interactive
+            intensity="heavy"
+            onPress={() => handleNavigate('/(app)/studio')}
+            style={styles.cardFill}
           >
             <LinearGradient
-              colors={[
-                NORTH_THEME.colors.accent.purple,
-                NORTH_THEME.colors.accent.cyan,
-              ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              colors={['rgba(0, 240, 255, 0.08)', 'rgba(176, 38, 255, 0.03)']}
               style={StyleSheet.absoluteFill}
             />
-            <Text style={styles.ctaText}>Launch Skia Engine</Text>
-            <ArrowRight size={20} color="#FFFFFF" />
-          </Pressable>
-        </Animated.View>
-      </Animated.View>
-
-      {/* BENTO GRID SECTION */}
-      <View style={[styles.grid, isDesktop && styles.gridDesktop]}>
-        <Animated.View
-          entering={FadeInUp.delay(200).duration(800).springify()}
-          style={[styles.gridItem, isDesktop && styles.gridCol1]}
-        >
-          <GlassCard intensity="light" style={styles.cardInner}>
-            <View style={styles.iconWrapper}>
-              <Cuboid size={28} color={NORTH_THEME.colors.accent.purple} />
+            <View style={styles.heroContent}>
+              <View style={styles.heroTop}>
+                <View style={styles.heroBadge}>
+                  <Zap size={14} color={NORTH_THEME.colors.accent.cyan} />
+                  <Text style={styles.heroBadgeText}>AI PERSPECTIVE WRAP</Text>
+                </View>
+                <Wand2 size={32} color={NORTH_THEME.colors.accent.cyan} />
+              </View>
+              <View>
+                <Text style={styles.heroTitle}>Studio Engine</Text>
+                <Text style={styles.heroDesc}>
+                  Initialize high-performance rendering canvas. Composite logos
+                  with realistic lighting and shadows.
+                </Text>
+              </View>
+              <View style={styles.heroFooter}>
+                <Text style={styles.heroActionText}>LAUNCH INTERFACE</Text>
+                <ArrowRight size={18} color={NORTH_THEME.colors.accent.cyan} />
+              </View>
             </View>
-            <Text style={styles.cardTitle}>Asset Engine</Text>
-            <Text style={styles.cardDesc}>
-              Manage product bases, vectors, and your unified brand kits
-              securely in the cloud.
-            </Text>
           </GlassCard>
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInUp.delay(300).duration(800).springify()}
-          style={[styles.gridItem, isDesktop && styles.gridCol2]}
+        {/* STATS COLUMN */}
+        <View
+          style={[styles.statsColumn, isDesktop && styles.statsColumnDesktop]}
         >
-          <GlassCard intensity="light" style={styles.cardInner}>
-            <View style={styles.iconWrapper}>
-              <Wand2 size={28} color={NORTH_THEME.colors.accent.pink} />
+          <Animated.View
+            entering={FadeInDown.delay(stagger(4))}
+            style={styles.miniGridItem}
+          >
+            <GlassCard intensity="medium" style={styles.cardFill}>
+              <View style={styles.statContent}>
+                <View style={styles.ccIconContainer}>
+                  <View style={styles.ccIconCircle} />
+                  <View
+                    style={[
+                      styles.ccIconCircle,
+                      { left: 10, backgroundColor: 'rgba(0, 240, 255, 0.5)' },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.statValue}>{profile?.credits || '10'}</Text>
+                <Text style={styles.statLabel}>REMAINING CREDITS</Text>
+              </View>
+            </GlassCard>
+          </Animated.View>
+
+          <Animated.View
+            entering={FadeInDown.delay(stagger(5))}
+            style={styles.miniGridItem}
+          >
+            <GlassCard intensity="medium" style={styles.cardFill}>
+              <View style={styles.statContent}>
+                <Layers size={20} color={NORTH_THEME.colors.accent.purple} />
+                <Text style={styles.statValue}>
+                  {profile?.total_renders || '0'}
+                </Text>
+                <Text style={styles.statLabel}>TOTAL RENDERS</Text>
+              </View>
+            </GlassCard>
+          </Animated.View>
+        </View>
+
+        {/* ASSET VAULT */}
+        <Animated.View
+          entering={FadeInDown.delay(stagger(6))}
+          style={styles.gridItem}
+        >
+          <GlassCard
+            interactive
+            intensity="medium"
+            onPress={() => handleNavigate('/(app)/assets')}
+            style={styles.cardFill}
+          >
+            <View style={styles.vaultContent}>
+              <View style={styles.iconBox}>
+                <ImageIcon size={24} color={NORTH_THEME.colors.accent.purple} />
+              </View>
+              <Text style={styles.vaultTitle}>Asset Vault</Text>
+              <Text style={styles.vaultDesc}>
+                Sync branding kits and base products.
+              </Text>
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: '65%' }]} />
+              </View>
+              <Text style={styles.vaultMeta}>STORAGE: 650MB / 1GB</Text>
             </View>
-            <Text style={styles.cardTitle}>AI Compositing</Text>
-            <Text style={styles.cardDesc}>
-              Multi-modal edge rendering computes perfect fabric warping and
-              perspective.
-            </Text>
           </GlassCard>
         </Animated.View>
 
+        {/* SYSTEM MONITOR */}
         <Animated.View
-          entering={FadeInUp.delay(400).duration(800).springify()}
-          style={[styles.gridItem, isDesktop && styles.gridCol3]}
+          entering={FadeInDown.delay(stagger(7))}
+          style={styles.gridItem}
         >
-          <GlassCard intensity="light" style={styles.cardInner}>
-            <View style={styles.iconWrapper}>
-              <DownloadCloud size={28} color={NORTH_THEME.colors.accent.cyan} />
+          <GlassCard intensity="light" style={styles.cardFill}>
+            <View style={styles.monitorContent}>
+              <View style={styles.monitorHeader}>
+                <Activity size={16} color={NORTH_THEME.colors.status.success} />
+                <Text style={styles.monitorTitle}>SYSTEM MONITOR</Text>
+              </View>
+              <View style={styles.monitorLine}>
+                <Cpu size={12} color={NORTH_THEME.colors.text.muted} />
+                <Text style={styles.monitorText}>
+                  AI CLUSTER: ACTIVE (0.4ms)
+                </Text>
+              </View>
+              <View style={styles.monitorLine}>
+                <Database size={12} color={NORTH_THEME.colors.text.muted} />
+                <Text style={styles.monitorText}>SUPABASE: SYNCED</Text>
+              </View>
+              <View style={styles.monitorLine}>
+                <ShieldCheck size={12} color={NORTH_THEME.colors.text.muted} />
+                <Text style={styles.monitorText}>ENCRYPTION: AES-256</Text>
+              </View>
             </View>
-            <Text style={styles.cardTitle}>4x Upscaling Export</Text>
-            <Text style={styles.cardDesc}>
-              Download production-ready, ultra-high resolution assets directly
-              to your device.
-            </Text>
           </GlassCard>
         </Animated.View>
       </View>
@@ -165,115 +236,182 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: NORTH_THEME.colors.background.primary,
-  },
-  content: { padding: 24, paddingTop: 60, paddingBottom: 100 },
-  contentDesktop: {
-    padding: 80,
+  container: { flex: 1, backgroundColor: 'transparent' },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 140,
     maxWidth: 1400,
-    alignSelf: 'center',
+    marginHorizontal: 'auto',
     width: '100%',
-  },
-  header: { marginBottom: 48 },
-  headerTopRow: {
+  }, // Padding bottom ensures cards don't hide behind BottomBar
+  headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  badge: {
-    backgroundColor: 'rgba(0, 0, 13, 0.01)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    borderWidth: 1,
-
-  },
-  badgeText: {
-    color: NORTH_THEME.colors.accent.purple,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-  },
-  creditPill: {
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    borderWidth: 1,
-    gap: 6,
-  },
-  creditText: {
-    color: NORTH_THEME.colors.accent.cyan,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  heroTitle: {
-    color: NORTH_THEME.colors.text.primary,
-    fontSize: 48,
-    fontWeight: '900',
-    letterSpacing: -2,
-    lineHeight: 52,
-    marginBottom: 16,
-  },
-  subtitle: {
-    color: NORTH_THEME.colors.text.secondary,
-    fontSize: 18,
-    lineHeight: 28,
-    maxWidth: 600,
     marginBottom: 32,
+    marginTop: 10,
   },
-  ctaWrapper: { alignSelf: 'flex-start', borderRadius: 16, overflow: 'hidden' },
-  ctaButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 18,
-    gap: 12,
-  },
-  ctaText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  welcomeLabel: {
+    color: NORTH_THEME.colors.text.muted,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 2,
   },
-  grid: { flexDirection: 'column', gap: 20 },
-  gridDesktop: { flexDirection: 'row', flexWrap: 'wrap' },
-  gridItem: { width: '100%' },
-  gridCol1: { width: '100%' },
-  gridCol2: { width: '48.5%' },
-  gridCol3: { width: '48.5%' },
-  cardInner: {
-    padding: 32,
-    minHeight: 220,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: NORTH_THEME.colors.border.glass,
-  },
-  iconWrapper: {
-    width: 56,
-    height: 56,
-    backgroundColor: 'rgba(0, 0, 255, 0.03)',
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 255, 0.05)',
-  },
-  cardTitle: {
-    color: NORTH_THEME.colors.text.primary,
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 10,
+  userName: {
+    color: '#FFF',
+    fontSize: 28,
+    fontWeight: '900',
     letterSpacing: -0.5,
   },
-  cardDesc: {
+  systemStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  systemStatusText: {
+    color: NORTH_THEME.colors.status.success,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  pulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: NORTH_THEME.colors.status.success,
+  },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16 },
+  gridDesktop: {},
+  gridItem: { flexBasis: '100%', minHeight: 200 },
+  cardFill: { flex: 1 },
+  heroItem: { flexBasis: 'calc(66% - 8px)' as any, minHeight: 420 },
+  heroContent: { flex: 1, justifyContent: 'space-between' },
+  heroTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0, 240, 255, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  heroBadgeText: {
+    color: NORTH_THEME.colors.accent.cyan,
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  heroTitle: {
+    color: '#FFF',
+    fontSize: 42,
+    fontWeight: '900',
+    marginBottom: 8,
+  },
+  heroDesc: {
     color: NORTH_THEME.colors.text.secondary,
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 24,
+    maxWidth: 450,
+  },
+  heroFooter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  heroActionText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  statsColumn: { flexBasis: '100%', gap: 16 },
+  statsColumnDesktop: { flexBasis: 'calc(33% - 8px)' as any },
+  miniGridItem: { height: 202 },
+  statContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  statValue: {
+    color: '#FFF',
+    fontSize: 48,
+    fontWeight: '900',
+    marginVertical: 4,
+  },
+  statLabel: {
+    color: NORTH_THEME.colors.text.muted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  vaultContent: { flex: 1 },
+  iconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    backgroundColor: 'rgba(176, 38, 255, 0.1)',
+  },
+  vaultTitle: {
+    color: '#FFF',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  vaultDesc: {
+    color: NORTH_THEME.colors.text.secondary,
+    fontSize: 13,
+    marginBottom: 20,
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 2,
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: NORTH_THEME.colors.accent.purple,
+    borderRadius: 2,
+  },
+  vaultMeta: {
+    color: NORTH_THEME.colors.text.muted,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  monitorContent: { flex: 1, gap: 12 },
+  monitorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  monitorTitle: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  monitorLine: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  monitorText: {
+    color: NORTH_THEME.colors.text.muted,
+    fontSize: 11,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  ccIconContainer: {
+    width: 30,
+    height: 20,
+    position: 'relative',
+    marginBottom: 10,
+  },
+  ccIconCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(176, 38, 255, 0.5)',
+    position: 'absolute',
   },
 });
