@@ -1,13 +1,12 @@
 /**
  * @file app/(app)/_layout.tsx
- * @description AAA+ Master Authenticated Workspace Controller for North Studio.
  * * FEATURES:
- * 1. Hardware Keyboard Management: Dynamically adjusts padding so the mobile BottomBar doesn't crush inputs.
+ * 1. Hardware Keyboard Management: Dynamically adjusts padding
  * 2. AppState Synchronization: Refreshes Supabase session & user profile when app returns from background.
  * 3. Integrated Error Boundary: Catches React render crashes gracefully without white-screening the app.
  * 4. Responsive Layout Engine: Seamlessly toggles Sidebar (Desktop) and BottomBar (Mobile).
  * 5. Route Registration: Safely registers all (app) routes (Settings, Support) while hiding them from the Tab UI.
- * 6. High-Performance Boot Screen: 120fps native-thread floating & glowing animation.
+ * 6. High-Performance Boot Screen: 120fps native-thread
  */
 
 import React, { useEffect, useState } from 'react';
