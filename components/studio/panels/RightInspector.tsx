@@ -1,7 +1,7 @@
 /**
  * @file components/studio/panels/RightInspector.tsx
- * @description Master Right Panel for Studio.
- * Handles Layer Management, Z-Index sorting, and Blend Modes.
+ * @description AAA+ Canvas State Inspector.
+ * @features Live layer selection, Z-Index stacking, and hardware deletion.
  */
 
 import React from 'react';
@@ -13,152 +13,162 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import { Layers, Eye, Lock, Unlock, EyeOff } from 'lucide-react-native';
+import { Layers, Trash2, Eye, EyeOff } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { NORTH_THEME } from '@/constants/theme';
+
 import { useLayerStore } from '@/store/studio/useLayerStore';
+import { NORTH_THEME } from '@/constants/theme';
+import { GlassCard } from '@/components/ui/GlassCard';
 
 export const RightInspector = () => {
-  const { present, selectLayer, updateLayer } = useLayerStore();
-  const layers = present.layers;
-  const selectedIds = present.selectedLayerIds;
+  // Read live state from the Engine
+  const layers = useLayerStore((state) => state.present.layers);
+  const selectedLayerIds = useLayerStore(
+    (state) => state.present.selectedLayerIds,
+  );
+
+  // Mutations
+  const selectLayer = useLayerStore((state) => state.selectLayer);
+  const removeLayer = useLayerStore((state) => state.removeLayer);
+  const updateLayer = useLayerStore((state) => state.updateLayer);
 
   const handleSelect = (id: string) => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
-    selectLayer(id, false);
+    selectLayer(id);
+  };
+
+  const handleDelete = (id: string) => {
+    if (Platform.OS !== 'web')
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    removeLayer(id);
+  };
+
+  const toggleVisibility = (id: string, currentVis: boolean) => {
+    updateLayer(id, { visible: !currentVis });
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Layers size={18} color={NORTH_THEME.colors.accent.purple} />
-        <Text style={styles.headerTitle}>LAYER STACK</Text>
+    <GlassCard intensity="heavy" style={styles.container}>
+      <View style={styles.headerRow}>
+        <Layers size={14} color={NORTH_THEME.colors.accent.purple} />
+        <Text style={styles.header}>LAYER STACK</Text>
       </View>
 
-      <ScrollView
-        style={styles.scrollArea}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {layers.length === 0 ? (
-          <Text style={styles.emptyText}>No layers in project.</Text>
-        ) : (
-          [...layers].reverse().map((layer) => {
-            const isSelected = selectedIds.includes(layer.id);
-            return (
-              <TouchableOpacity
-                key={layer.id}
-                activeOpacity={0.7}
-                onPress={() => handleSelect(layer.id)}
-                style={[styles.layerItem, isSelected && styles.layerItemActive]}
-              >
-                <View style={styles.layerInfo}>
-                  <View
-                    style={[
-                      styles.typeBadge,
-                      isSelected && {
-                        backgroundColor: 'rgba(255,255,255,0.1)',
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.typeText, isSelected && { color: '#FFF' }]}
-                    >
-                      {layer.type === 'BASE_PRODUCT' ? 'BASE' : layer.type}
-                    </Text>
-                  </View>
-                  <Text
-                    style={[styles.layerName, isSelected && { color: '#FFF' }]}
-                    numberOfLines={1}
-                  >
-                    {layer.name}
-                  </Text>
-                </View>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Render the layers in reverse so the top of the list is the top layer visually */}
+        {[...layers].reverse().map((layer) => {
+          const isSelected = selectedLayerIds.includes(layer.id);
 
-                {/* Layer Toggles */}
-                <View style={styles.layerActions}>
-                  <TouchableOpacity
-                    onPress={() =>
-                      updateLayer(layer.id, { locked: !layer.locked })
-                    }
-                  >
-                    {layer.locked ? (
-                      <Lock size={14} color="#EF4444" />
-                    ) : (
-                      <Unlock size={14} color="#64748B" />
-                    )}
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() =>
-                      updateLayer(layer.id, { visible: !layer.visible })
-                    }
-                  >
-                    {layer.visible ? (
-                      <Eye size={14} color="#FFF" />
-                    ) : (
-                      <EyeOff size={14} color="#64748B" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            );
-          })
+          return (
+            <TouchableOpacity
+              key={layer.id}
+              activeOpacity={0.8}
+              onPress={() => handleSelect(layer.id)}
+              style={[styles.layerItem, isSelected && styles.layerItemActive]}
+            >
+              <View style={styles.layerInfo}>
+                <Text
+                  style={[
+                    styles.layerName,
+                    isSelected && styles.layerNameActive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {layer.name}
+                </Text>
+                <Text style={styles.layerType}>{layer.type}</Text>
+              </View>
+
+              <View style={styles.actions}>
+                <TouchableOpacity
+                  onPress={() => toggleVisibility(layer.id, layer.visible)}
+                  style={styles.actionBtn}
+                >
+                  {layer.visible ? (
+                    <Eye size={14} color={NORTH_THEME.colors.text.muted} />
+                  ) : (
+                    <EyeOff
+                      size={14}
+                      color={NORTH_THEME.colors.status.danger}
+                    />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleDelete(layer.id)}
+                  style={styles.actionBtn}
+                >
+                  <Trash2 size={14} color={NORTH_THEME.colors.status.danger} />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+
+        {layers.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>Canvas is empty.</Text>
+          </View>
         )}
       </ScrollView>
-    </View>
+    </GlassCard>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    width: 280,
-    backgroundColor: 'rgba(9, 12, 19, 0.6)', // Matches Sidebar exactly
+    flex: 1,
+    padding: 16,
     borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.05)',
-    padding: 20,
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 20,
+    gap: 8,
+    marginBottom: 16,
   },
-  headerTitle: {
-    color: '#FFF',
-    fontSize: 12,
+  header: {
+    color: NORTH_THEME.colors.text.muted,
+    fontSize: 10,
     fontWeight: '900',
     letterSpacing: 2,
   },
-  scrollArea: { flex: 1 },
-  scrollContent: { gap: 8 },
-  emptyText: {
-    color: '#64748B',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 20,
-  },
+  scroll: { flex: 1 },
   layerItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.02)',
     padding: 12,
+    backgroundColor: 'rgba(255,255,255,0.02)',
     borderRadius: 12,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: 'transparent',
   },
   layerItemActive: {
     backgroundColor: 'rgba(176, 38, 255, 0.1)',
-    borderColor: 'rgba(176, 38, 255, 0.3)',
+    borderColor: NORTH_THEME.colors.accent.purple,
   },
-  layerInfo: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-  typeBadge: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+  layerInfo: { flex: 1 },
+  layerName: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 2,
   },
-  typeText: { color: '#64748B', fontSize: 8, fontWeight: '900' },
-  layerName: { color: '#94A3B8', fontSize: 13, fontWeight: '600', flex: 1 },
-  layerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  layerNameActive: { color: NORTH_THEME.colors.accent.purple },
+  layerType: {
+    color: NORTH_THEME.colors.text.muted,
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  actions: { flexDirection: 'row', gap: 8 },
+  actionBtn: { padding: 4 },
+  emptyState: { alignItems: 'center', marginTop: 40 },
+  emptyText: {
+    color: 'rgba(255,255,255,0.2)',
+    fontSize: 12,
+    fontWeight: '800',
+  },
 });

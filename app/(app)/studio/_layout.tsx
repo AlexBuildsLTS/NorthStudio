@@ -1,55 +1,107 @@
 /**
- * @file app/(app)/studio/_layout.tsx
- * @description Immersive Boundary for the Studio Engine.
- * Features: Hardware Back-Button Interception, Status Bar Hiding, 120fps Fade Entrance.
+ * @file components/studio/engine/SkiaCanvas.tsx
+ * @description The Master 120fps GPU Rendering Surface.
+ * @features
+ * - Infinite Viewport Camera (Pan & Zoom the entire scene).
+ * - Layer Rendering Loop (Mounts Skia textures).
+ * - Neon Transform HUD (Renders strictly over the active object).
  */
 
-import React, { useEffect } from 'react';
-import { BackHandler, Alert, Platform } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { StyleSheet, useWindowDimensions } from 'react-native';
+import { Canvas, Fill, Group } from '@shopify/react-native-skia';
+import { useDerivedValue } from 'react-native-reanimated';
 
-export default function StudioLayout() {
-  const router = useRouter();
+// --- STORES & CONTEXTS ---
+import { useLayerStore } from '@/store/studio/useLayerStore';
+import { useToolStore } from '@/store/studio/useToolStore';
+import { useGestureContext } from '@/components/studio/interactions/GestureController';
 
-  // Prevent accidental exits on Android devices via hardware back button
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
+// --- RENDER NODES ---
+import { LayerNode } from '@/components/studio/engine/LayerNode';
+import { TransformBox } from '@/components/studio/interactions/TransformBox';
+import { GridSystem } from '@/components/studio/overlays/GridSystem';
 
-    const onBackPress = () => {
-      Alert.alert(
-        'Exit Studio?',
-        'Are you sure you want to leave? Unsaved changes may be lost.',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => {} },
-          { text: 'Exit', style: 'destructive', onPress: () => router.back() },
-        ],
-      );
-      return true; // Prevents default back action
-    };
+/**
+ * @file components/studio/engine/SkiaCanvas.tsx
+ * @description The Master 120fps GPU Rendering Surface.
+ */
 
-    const backHandler = BackHandler.addEventListener(
-      'hardwareBackPress',
-      onBackPress,
-    );
-    return () => backHandler.remove();
-  }, [router]);
+export const SkiaCanvas = () => {
+  const { width, height } = useWindowDimensions();
+
+  // 1. ZUSTAND STATE
+  const layers = useLayerStore((state) => state.present.layers);
+  const selectedLayerIds = useLayerStore(
+    (state) => state.present.selectedLayerIds,
+  );
+  const viewport = useToolStore((state) => state.viewport);
+
+  // Determine Active Target
+  const activeLayerId =
+    selectedLayerIds.length === 1 ? selectedLayerIds[0] : null;
+  const activeLayer = layers.find((l) => l.id === activeLayerId);
+
+  // 2. GESTURE ENGINE CONTEXT (120fps C++ Values)
+  const gestureContext = useGestureContext();
+
+  // 3. CAMERA VIEWPORT MATH
+  // This transform applies to the entire group, allowing infinite panning and zooming
+  const cameraTransform = useDerivedValue(() => {
+    return [
+      { translateX: viewport.x },
+      { translateY: viewport.y },
+      { scale: viewport.zoom },
+    ];
+  }, [viewport]);
 
   return (
-    <>
-      {/* Total Immersion: Hide Status bar on iOS/Android while in Studio */}
-      <StatusBar hidden />
+    <Canvas style={styles.canvas}>
+      {/* BASE LAYER: Deep Space Void */}
+      <Fill color="#05030A" />
 
-      {/* Stack ensures the Studio sits on top of everything without TabBars bleeding through */}
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: 'fade', // Smooth AAA entrance
-          contentStyle: { backgroundColor: '#02010A' }, // Deep Obsidian
-        }}
-      >
-        <Stack.Screen name="index" />
-      </Stack>
-    </>
+      {/* CAMERA GROUP: 
+        Everything inside this Group moves when the user pans or zooms the camera. 
+      */}
+      <Group transform={cameraTransform}>
+        {/* 1. THE INFINITE GRID */}
+        <GridSystem />
+
+        {/* 2. THE RENDER LOOP (Back to Front) */}
+        {layers.map((layer) => {
+          const isActive = layer.id === activeLayerId;
+          return (
+            <LayerNode
+              key={layer.id}
+              layer={layer}
+              isActive={isActive}
+              activeX={gestureContext.activeX}
+              activeY={gestureContext.activeY}
+              activeScale={gestureContext.activeScale}
+              activeRotation={gestureContext.activeRotation}
+            />
+          );
+        })}
+
+        {/* 3. THE TRANSFORM HUD (Always on top) */}
+        {activeLayer && (
+          <TransformBox
+            layer={activeLayer}
+            // We pass arbitrary default dimensions for the box.
+            // In a fully dynamic system, this would read the SkiaImage bounds.
+            width={200}
+            height={200}
+          />
+        )}
+      </Group>
+    </Canvas>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  canvas: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+});
